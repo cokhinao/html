@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>FLAC Player</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/flac.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background-color: #f4f4f4;
+        }
+        .player {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="player">
+        <h2>FLAC Audio Player</h2>
+        <p id="audioUrl"></p>
+        <button onclick="playAudio()">Play</button>
+        <button onclick="pauseAudio()">Pause</button>
+        <button onclick="stopAudio()">Stop</button>
+    </div>
+
+    <script>
+        let audioContext, sourceNode;
+
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            let regex = new RegExp('[?&]' + name + '=([^&#]*)');
+            let results = regex.exec(window.location.href);
+            return results === null ? null : decodeURIComponent(results[1]);
+        }
+
+        let audioUrl = getUrlParameter('m');
+        if (audioUrl) {
+            document.getElementById('audioUrl').textContent = `Playing: ${audioUrl}`;
+        }
+
+        async function playAudio() {
+            if (!audioUrl) {
+                alert("Không tìm thấy URL file FLAC!");
+                return;
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const response = await fetch(audioUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            const decodedData = await audioContext.decodeAudioData(arrayBuffer);
+            sourceNode = audioContext.createBufferSource();
+            sourceNode.buffer = decodedData;
+            sourceNode.connect(audioContext.destination);
+            sourceNode.start();
+        }
+
+        function pauseAudio() {
+            if (audioContext) {
+                audioContext.suspend();
+            }
+        }
+
+        function stopAudio() {
+            if (audioContext && sourceNode) {
+                sourceNode.stop();
+                audioContext.close();
+                audioContext = null;
+            }
+        }
+    </script>
+</body>
+</html>
